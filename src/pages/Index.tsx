@@ -263,33 +263,8 @@ const Index = () => {
 
           <main className="flex-1 p-4 overflow-auto">
             <div className="max-w-md mx-auto space-y-4">
-              {/* Pet Display */}
-              <Card className="p-6 space-y-4" style={{ backgroundColor: 'var(--tp-white)', borderColor: 'var(--tp-primary-200)' }}>
-                <div className="flex justify-center">
-                  <Pet stage={petStage} mood={stats.mood} />
-                </div>
-                
-                <div 
-                  className="p-4 rounded-lg relative"
-                  style={{ backgroundColor: 'var(--tp-primary-100)' }}
-                >
-                  <div 
-                    className="absolute -top-2 left-8 w-0 h-0"
-                    style={{
-                      borderLeft: '10px solid transparent',
-                      borderRight: '10px solid transparent',
-                      borderBottom: '10px solid var(--tp-primary-100)'
-                    }}
-                  />
-                  <p className="tp-body-regular" style={{ color: 'var(--tp-grayscale-800)' }}>
-                    {getChickenMessage()}
-                  </p>
-                </div>
-              </Card>
-
-              {/* Stats */}
-              <Card className="p-6 space-y-4" style={{ backgroundColor: 'var(--tp-white)', borderColor: 'var(--tp-primary-200)' }}>
-                <h3 className="tp-h3-semibold" style={{ color: 'var(--tp-grayscale-800)' }}>能力值</h3>
+                            {/* Stats */}
+              <Card className="p-3 space-y-4" style={{ backgroundColor: 'var(--tp-white)', borderColor: 'var(--tp-primary-200)' }}>
                 <StatBar 
                   label="力量值" 
                   value={stats.currentLevelStrength} 
@@ -312,6 +287,13 @@ const Index = () => {
                   iconType="svg"
                 />
               </Card>
+              
+              {/* Pet Display (no white frame). Speech bubble moves with the pet via Pet.message prop */}
+              <div className="flex justify-center">
+                <Pet stage={petStage} mood={stats.mood} message={getChickenMessage()} />
+              </div>
+
+
 
               {/* Actions */}
               <div className="grid grid-cols-2 gap-3">
