@@ -77,7 +77,11 @@ const Exercise: React.FC = () => {
 
   // minimal UI controls: user can mark "outdoor" and "raining" for rewards
   const [isOutdoor, setIsOutdoor] = useState<boolean>(false);
-  const [manualRain, setManualRain] = useState<boolean>(false);
+  const [manualRain, setManualRain] = useState<boolean>(() => {
+    // Load rain state from localStorage
+    const saved = localStorage.getItem("isRaining");
+    return saved === "true";
+  });
 
   // automatic weather detection state
   const [isRainingDetected, setIsRainingDetected] = useState<boolean>(false);
@@ -667,7 +671,12 @@ const Exercise: React.FC = () => {
               <input
                 type="checkbox"
                 checked={manualRain}
-                onChange={(e) => setManualRain(e.target.checked)}
+                onChange={(e) => {
+                  const isRaining = e.target.checked;
+                  setManualRain(isRaining);
+                  // Save rain state to localStorage
+                  localStorage.setItem("isRaining", isRaining.toString());
+                }}
                 className="form-checkbox"
               />
               手動：下雨

@@ -35,6 +35,12 @@ const Index = () => {
   const [hasCheckedDaily, setHasCheckedDaily] = useState(false);
   const [entranceStage, setEntranceStage] = useState<'egg' | 'hatching' | 'done'>('egg');
   const [typedText, setTypedText] = useState("");
+  
+  // Rain effect state
+  const [isRaining, setIsRaining] = useState<boolean>(() => {
+    const saved = localStorage.getItem("isRaining");
+    return saved === "true";
+  });
 
   // Perform daily check when component mounts
   useEffect(() => {
@@ -75,6 +81,25 @@ const Index = () => {
       setShowEntrance(false);
     }, 1500);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Listen for rain state changes from localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem("isRaining");
+      setIsRaining(saved === "true");
+    };
+
+    // Listen for storage changes from other tabs/windows
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check for changes when returning to this page
+    const interval = setInterval(handleStorageChange, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
   }, []);
 
   const getStageName = (stage: number) => {
@@ -166,9 +191,48 @@ const Index = () => {
   const petStage = getAPIStageNameFunc(pet.stage);
   const currentLevelStrength = pet.strength % 120;
 
+  // Rain animation component
+  const RainAnimation = () => {
+    if (!isRaining) return null;
+    
+    return (
+      <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden">
+        <style>{`
+          @keyframes rain-fall {
+            0% { transform: translateY(-100vh) rotate(10deg); opacity: 0.6; }
+            100% { transform: translateY(100vh) rotate(10deg); opacity: 0; }
+          }
+          .rain-drop {
+            position: absolute;
+            width: 2px;
+            height: 15px;
+            background: linear-gradient(to bottom, rgba(173, 216, 230, 0.8), rgba(135, 206, 235, 0.4));
+            border-radius: 0 0 2px 2px;
+            animation: rain-fall linear infinite;
+          }
+        `}</style>
+        {/* Generate multiple rain drops */}
+        {Array.from({ length: 50 }).map((_, i) => (
+          <div
+            key={i}
+            className="rain-drop"
+            style={{
+              left: `${Math.random() * 100}%`,
+              animationDuration: `${0.5 + Math.random() * 1}s`,
+              animationDelay: `${Math.random() * 2}s`,
+              height: `${10 + Math.random() * 10}px`,
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--tp-primary-50)' }}>
+        {/* Rain Animation */}
+        <RainAnimation />
         {/* Entrance Animation: egg rotate -> hatch -> pop into small */}
         {showEntrance && (
           <div
