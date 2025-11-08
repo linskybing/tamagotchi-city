@@ -17,11 +17,11 @@ const queryClient = new QueryClient();
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { userId } = useUser();
-  
+
   if (!userId) {
     return <Navigate to="/welcome" replace />;
   }
-  
+
   return <>{children}</>;
 }
 

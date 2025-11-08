@@ -83,9 +83,9 @@ const Status = () => {
               <span style={{ color: 'var(--tp-primary-600)' }}>{pet.stamina}/900</span>
             </div>
             <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--tp-grayscale-200)' }}>
-              <div 
-                className="h-full transition-all" 
-                style={{ 
+              <div
+                className="h-full transition-all"
+                style={{
                   width: `${(pet.stamina / 900) * 100}%`,
                   backgroundColor: pet.stamina > 300 ? 'var(--tp-primary-500)' : 'var(--tp-orange-500)'
                 }}
@@ -119,7 +119,7 @@ const Status = () => {
           ) : (
             <div className="space-y-3">
               {quests.map((userQuest) => (
-                <div 
+                <div
                   key={userQuest.id}
                   className="flex items-start gap-3 p-3 rounded-lg"
                   style={{ backgroundColor: userQuest.is_completed ? 'var(--tp-green-50)' : 'var(--tp-primary-50)' }}

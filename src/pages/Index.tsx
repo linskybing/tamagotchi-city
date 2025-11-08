@@ -72,30 +72,30 @@ const Index = () => {
 
   const getChickenMessage = () => {
     if (!pet) return "咕咕！準備好一起運動了嗎？";
-    
+
     const { strength, stamina, mood, level } = pet;
     const currentLevelStrength = strength % 120;
-    
+
     if (stamina <= 0) {
       return "咕咕！今天運動量已經足夠了，休息也很重要喔！🌟";
     }
-    
+
     if (mood > 80) {
       return "咕咕！心情超好！繼續保持運動習慣喔！💪";
     }
-    
+
     if (mood > 60) {
       return "咕咕～感覺還不錯呢！";
     }
-    
+
     if (currentLevelStrength < 60) {
       return "咕咕...今天還沒達標呢，記得要運動至少10分鐘喔！";
     }
-    
+
     if (mood <= 40) {
       return "咕...好久沒運動了，我快要生鏽了...";
     }
-    
+
     return "咕咕！準備好一起運動了嗎？";
   };
 
@@ -145,21 +145,21 @@ const Index = () => {
       <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--tp-primary-50)' }}>
         {/* Entrance Animation */}
         {showEntrance && (
-          <div 
+          <div
             className="fixed inset-0 z-50 flex items-center justify-center"
             style={{ backgroundColor: 'var(--tp-grayscale-800)' }}
           >
             <div className="relative">
-              <div 
+              <div
                 className="absolute inset-0 border-8 animate-pulse"
-                style={{ 
+                style={{
                   borderColor: 'var(--tp-secondary-500)',
                   animation: 'fade-out 1.5s ease-out forwards'
                 }}
               />
-              <div 
+              <div
                 className="text-6xl animate-bounce"
-                style={{ 
+                style={{
                   animation: 'scale-in 1s ease-out'
                 }}
               >
@@ -170,12 +170,12 @@ const Index = () => {
         )}
 
         <AppSidebar />
-        
+
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header 
+          <header
             className="h-16 flex items-center px-4 border-b"
-            style={{ 
+            style={{
               backgroundColor: 'var(--tp-white)',
               borderColor: 'var(--tp-primary-200)'
             }}
@@ -184,7 +184,7 @@ const Index = () => {
             <div className="flex items-center gap-3 flex-1">
               <Popover open={namePopoverOpen} onOpenChange={setNamePopoverOpen}>
                 <PopoverTrigger asChild>
-                  <button 
+                  <button
                     className="tp-h2-semibold flex items-center gap-2 hover:opacity-70 transition-opacity"
                     style={{ color: 'var(--tp-primary-700)' }}
                   >
@@ -227,14 +227,14 @@ const Index = () => {
                   </div>
                 </PopoverContent>
               </Popover>
-              
+
               <span className="tp-body-regular" style={{ color: 'var(--tp-grayscale-600)' }}>
                 {getStageName(pet.stage)}
               </span>
-              
-              <div 
+
+              <div
                 className="ml-auto px-3 py-1 rounded-full tp-body-semibold"
-                style={{ 
+                style={{
                   backgroundColor: 'var(--tp-secondary-100)',
                   color: 'var(--tp-secondary-700)'
                 }}
@@ -251,12 +251,12 @@ const Index = () => {
                 <div className="flex justify-center">
                   <Pet stage={petStage} mood={pet.mood} />
                 </div>
-                
-                <div 
+
+                <div
                   className="p-4 rounded-lg relative"
                   style={{ backgroundColor: 'var(--tp-primary-100)' }}
                 >
-                  <div 
+                  <div
                     className="absolute -top-2 left-8 w-0 h-0"
                     style={{
                       borderLeft: '10px solid transparent',
@@ -273,23 +273,23 @@ const Index = () => {
               {/* Stats */}
               <Card className="p-6 space-y-4" style={{ backgroundColor: 'var(--tp-white)', borderColor: 'var(--tp-primary-200)' }}>
                 <h3 className="tp-h3-semibold" style={{ color: 'var(--tp-grayscale-800)' }}>能力值</h3>
-                <StatBar 
-                  label="力量值" 
-                  value={currentLevelStrength} 
-                  max={120} 
-                  icon="💪" 
+                <StatBar
+                  label="力量值"
+                  value={currentLevelStrength}
+                  max={120}
+                  icon="💪"
                 />
-                <StatBar 
-                  label="體力值" 
-                  value={pet.stamina} 
-                  max={900} 
-                  icon="❤️" 
+                <StatBar
+                  label="體力值"
+                  value={pet.stamina}
+                  max={900}
+                  icon="❤️"
                 />
-                <StatBar 
-                  label="心情" 
-                  value={pet.mood} 
-                  max={100} 
-                  icon="😊" 
+                <StatBar
+                  label="心情"
+                  value={pet.mood}
+                  max={100}
+                  icon="😊"
                 />
               </Card>
 
