@@ -114,21 +114,10 @@ export interface BreakthroughResult {
 }
 
 // 每日任務相關（匹配後端實際返回格式）
-export interface DailyQuestItem {
-    id: number;
-    title: string;
-    description: string;
-    completed: boolean;
-    progress: number;  // 當前進度值
-    goal: number;  // 目標值
-    reward_strength: number;
-    reward_stamina: number;
-    reward_mood: number;
-}
-
 export interface DailyQuestStatus {
-    quests: DailyQuestItem[];
-    last_reset_date: string;
+    quest_1_completed: boolean;
+    quest_2_completed: boolean;
+    quest_3_completed: boolean;
 }
 
 export interface ClaimQuestResult {

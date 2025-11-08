@@ -51,17 +51,12 @@ const DailyQuests = ({ userId, onQuestCompleted }: DailyQuestsProps) => {
             const data = await getUserDailyQuests(userId);
             console.log('DailyQuests - API response:', data);
 
-            // 檢查數據結構
-            if (!data || !data.quests) {
-                console.error('Invalid API response:', data);
-                toast.error("任務資料格式錯誤");
-                return;
-            }
+            // 後端返回格式: { quest_1_completed, quest_2_completed, quest_3_completed }
+            const completed = new Set<number>();
+            if (data.quest_1_completed) completed.add(1);
+            if (data.quest_2_completed) completed.add(2);
+            if (data.quest_3_completed) completed.add(3);
 
-            // 將已完成的任務 ID 存入 Set
-            const completed = new Set(
-                data.quests.filter((q: any) => q.completed).map((q: any) => q.id)
-            );
             console.log('DailyQuests - Completed quest IDs:', Array.from(completed));
             setCompletedQuests(completed);
         } catch (error) {

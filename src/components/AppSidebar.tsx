@@ -69,9 +69,11 @@ export function AppSidebar() {
 
       try {
         const data = await getUserDailyQuests(userId);
-        const completed = new Set(
-          data.quests.filter(q => q.completed).map(q => q.id)
-        );
+        // 後端返回格式: { quest_1_completed, quest_2_completed, quest_3_completed }
+        const completed = new Set<number>();
+        if (data.quest_1_completed) completed.add(1);
+        if (data.quest_2_completed) completed.add(2);
+        if (data.quest_3_completed) completed.add(3);
         setCompletedQuests(completed);
       } catch (error) {
         console.error("Failed to load daily quests:", error);
@@ -93,9 +95,10 @@ export function AppSidebar() {
 
         // 重新載入任務狀態
         const data = await getUserDailyQuests(userId);
-        const completed = new Set(
-          data.quests.filter(q => q.completed).map(q => q.id)
-        );
+        const completed = new Set<number>();
+        if (data.quest_1_completed) completed.add(1);
+        if (data.quest_2_completed) completed.add(2);
+        if (data.quest_3_completed) completed.add(3);
         setCompletedQuests(completed);
 
         await refreshPet();
@@ -146,7 +149,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-   
+
         <SidebarGroup>
           <Collapsible open={missionsOpen} onOpenChange={setMissionsOpen}>
             <SidebarGroupLabel asChild>
