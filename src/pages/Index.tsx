@@ -302,12 +302,12 @@ const Index = () => {
               <div className="grid grid-cols-2 gap-3">
                 <ActionButton
                   icon={chickenSport}
-                  label="運動"
+                  label="來去運動"
                   onClick={() => navigate("/exercise")}
                 />
                 <ActionButton
                   icon={chickenTravel}
-                  label="旅遊"
+                  label="旅遊小雞"
                   onClick={() => navigate("/travel")}
                   variant="accent"
                 />

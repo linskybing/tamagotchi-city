@@ -17,7 +17,7 @@ const ActionButton = ({ icon, label, onClick, variant = "default" }: ActionButto
   return (
     <Button
       onClick={onClick}
-      className={`flex-1 h-14 flex flex-row items-center justify-center gap-3 px-4 ${
+      className={`flex-1 h-14 flex flex-row items-center justify-center gap-1 px-3 ${
         variant === "accent" ? "bg-accent text-accent-foreground hover:bg-accent/90" : ""
       }`}
       variant={variant === "default" ? "default" : undefined}
