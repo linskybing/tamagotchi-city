@@ -8,6 +8,7 @@ import { QuestLocation, UserLocation } from '@/types/quest';
 import { Navigation, MapPin, Trophy, CheckCircle2 } from 'lucide-react';
 import TPButton from './TPButton/TPButton';
 import { Card } from './ui/card';
+import { useLocation } from '@/hooks/useLocation';
 
 // 修復 Leaflet 預設圖標問題
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -31,10 +32,10 @@ const userIcon = new L.Icon({
 
 // 任務地點圖標
 const createQuestIcon = (status: QuestLocation['status'], category: string) => {
-  const color = status === 'completed' ? '#22c55e' : 
-                status === 'in-progress' ? '#f59e0b' : 
-                category === '運動場館' ? '#ec4899' : '#8b5cf6';
-  
+  const color = status === 'completed' ? '#22c55e' :
+    status === 'in-progress' ? '#f59e0b' :
+      category === '運動場館' ? '#ec4899' : '#8b5cf6';
+
   return new L.Icon({
     iconUrl: 'data:image/svg+xml;base64,' + btoa(`
       <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="${color}" stroke="white" stroke-width="2">
@@ -49,27 +50,27 @@ const createQuestIcon = (status: QuestLocation['status'], category: string) => {
 };
 
 // 移動到指定位置的組件 - 只在掛載時執行一次，立即顯示不要動畫
-function FlyToLocation({ target, questId, onComplete }: { 
+function FlyToLocation({ target, questId, onComplete }: {
   target: [number, number];
   questId: string;
   onComplete: () => void;
 }) {
   const map = useMap();
   const hasMovedRef = useRef(false);
-  
+
   useEffect(() => {
     // 只執行一次
     if (hasMovedRef.current) {
       return;
     }
-    
+
     hasMovedRef.current = true;
-    
+
     // 驗證目標位置是否有效
     if (target && target[0] && target[1]) {
       // 立即設置視角，不要動畫效果
       map.setView(target, 16, { animate: false });
-      
+
       // 直接通知完成，不自動打開 popup（用戶可以自己點擊）
       setTimeout(() => {
         onComplete();
@@ -78,21 +79,21 @@ function FlyToLocation({ target, questId, onComplete }: {
       onComplete();
     }
   }, []); // 空依賴陣列，只在掛載時執行
-  
+
   return null;
 }
 
 // 路線規劃組件
-function RoutingControl({ start, end }: { 
-  start: [number, number]; 
-  end: [number, number]; 
+function RoutingControl({ start, end }: {
+  start: [number, number];
+  end: [number, number];
 }) {
   const map = useMap();
   const routingControlRef = useRef<any>(null);
-  
+
   useEffect(() => {
     if (!start || !end) return;
-    
+
     // 如果路線控制器已存在，先移除
     if (routingControlRef.current) {
       try {
@@ -102,7 +103,7 @@ function RoutingControl({ start, end }: {
         console.warn('移除舊路線控制器時發生錯誤:', e);
       }
     }
-    
+
     const newRoutingControl = (L.Routing as any).control({
       waypoints: [
         L.latLng(start[0], start[1]),
@@ -125,15 +126,15 @@ function RoutingControl({ start, end }: {
         suppressDemoServerWarning: true // 隱藏 OSRM 演示服務器警告
       })
     }).addTo(map);
-    
+
     // 隱藏路線指示面板
     const container = newRoutingControl.getContainer();
     if (container) {
       container.style.display = 'none';
     }
-    
+
     routingControlRef.current = newRoutingControl;
-    
+
     return () => {
       if (routingControlRef.current) {
         try {
@@ -145,7 +146,7 @@ function RoutingControl({ start, end }: {
       }
     };
   }, [map, start[0].toFixed(3), start[1].toFixed(3), end[0].toFixed(3), end[1].toFixed(3)]);
-  
+
   return null;
 }
 
@@ -158,20 +159,20 @@ function useMapBounds() {
 // 回到我的位置按鈕組件
 function LocationButton({ userLocation, hasRealLocation }: { userLocation: UserLocation; hasRealLocation: boolean }) {
   const map = useMap();
-  
+
   const handleClick = () => {
     if (hasRealLocation) {
       map.flyTo([userLocation.lat, userLocation.lng], 14, { duration: 1.5 });
     }
   };
-  
+
   return (
-    <div 
-      className="leaflet-top leaflet-right" 
-      style={{ 
-        position: 'absolute', 
-        top: '10px', 
-        right: '10px', 
+    <div
+      className="leaflet-top leaflet-right"
+      style={{
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
         zIndex: 1000,
         pointerEvents: 'none'
       }}
@@ -188,8 +189,8 @@ function LocationButton({ userLocation, hasRealLocation }: { userLocation: UserL
           }}
           title="回到我的位置"
         >
-          <Navigation 
-            className="w-5 h-5" 
+          <Navigation
+            className="w-5 h-5"
             style={{ color: hasRealLocation ? 'var(--tp-primary-600)' : 'var(--tp-grayscale-400)' }}
           />
         </button>
@@ -209,12 +210,12 @@ interface MapViewProps {
 }
 
 // 任務標記組件 - 使用 hook 獲取邊界
-function QuestMarkers({ 
-  quests, 
-  userLocation, 
-  devMode, 
+function QuestMarkers({
+  quests,
+  userLocation,
+  devMode,
   flyToQuest,
-  onAcceptQuest, 
+  onAcceptQuest,
   onCompleteQuest,
   calculateDistance,
   isInRange,
@@ -222,7 +223,7 @@ function QuestMarkers({
   createQuestIcon
 }: any) {
   const mapBounds = useMapBounds();
-  
+
   return (
     <>
       {quests.map((quest: QuestLocation) => {
@@ -234,10 +235,10 @@ function QuestMarkers({
         );
         const inRange = isInRange(quest);
         const isFocused = flyToQuest?.id === quest.id;
-        
+
         // 檢查任務是否在當前地圖視野內
-        const isInView = mapBounds ? 
-          mapBounds.contains([quest.lat, quest.lng]) : 
+        const isInView = mapBounds ?
+          mapBounds.contains([quest.lat, quest.lng]) :
           true;
 
         return (
@@ -246,102 +247,102 @@ function QuestMarkers({
             position={[quest.lat, quest.lng]}
             icon={createQuestIcon(quest.status, quest.category)}
           >
-              <Popup 
-                maxWidth={300}
-                autoClose={true}
-                closeOnClick={true}
-              >
-                <div className="space-y-2 p-2">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" style={{ color: 'var(--tp-primary-500)' }} />
-                    <span className="tp-body-semibold" style={{ color: 'var(--tp-grayscale-800)' }}>
-                      {quest.name}
-                    </span>
-                  </div>
-                  
-                  <span 
-                    className="inline-block px-2 py-1 rounded tp-caption"
-                    style={{ 
-                      backgroundColor: quest.category === '運動場館' 
-                        ? 'var(--tp-secondary-100)' 
-                        : 'var(--tp-primary-100)',
-                      color: quest.category === '運動場館'
-                        ? 'var(--tp-secondary-700)'
-                        : 'var(--tp-primary-700)'
-                    }}
-                  >
-                    {quest.category}
+            <Popup
+              maxWidth={300}
+              autoClose={true}
+              closeOnClick={true}
+            >
+              <div className="space-y-2 p-2">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" style={{ color: 'var(--tp-primary-500)' }} />
+                  <span className="tp-body-semibold" style={{ color: 'var(--tp-grayscale-800)' }}>
+                    {quest.name}
                   </span>
+                </div>
 
-                  <p className="tp-body-regular" style={{ color: 'var(--tp-grayscale-600)' }}>
-                    {quest.description}
+                <span
+                  className="inline-block px-2 py-1 rounded tp-caption"
+                  style={{
+                    backgroundColor: quest.category === '運動場館'
+                      ? 'var(--tp-secondary-100)'
+                      : 'var(--tp-primary-100)',
+                    color: quest.category === '運動場館'
+                      ? 'var(--tp-secondary-700)'
+                      : 'var(--tp-primary-700)'
+                  }}
+                >
+                  {quest.category}
+                </span>
+
+                <p className="tp-body-regular" style={{ color: 'var(--tp-grayscale-600)' }}>
+                  {quest.description}
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4" style={{ color: 'var(--tp-secondary-500)' }} />
+                  <span className="tp-caption" style={{ color: 'var(--tp-secondary-700)' }}>
+                    {getBonusText(quest.bonus)}
+                  </span>
+                </div>
+
+                <div className="pt-2 border-t">
+                  <p className="tp-caption mb-2" style={{
+                    color: inRange ? 'var(--tp-success-600)' : 'var(--tp-grayscale-600)'
+                  }}>
+                    距離: {Math.round(distance)}m {inRange && '✓ 在範圍內'}
                   </p>
 
-                  <div className="flex items-center gap-2">
-                    <Trophy className="w-4 h-4" style={{ color: 'var(--tp-secondary-500)' }} />
-                    <span className="tp-caption" style={{ color: 'var(--tp-secondary-700)' }}>
-                      {getBonusText(quest.bonus)}
-                    </span>
-                  </div>
-
-                  <div className="pt-2 border-t">
-                    <p className="tp-caption mb-2" style={{ 
-                      color: inRange ? 'var(--tp-success-600)' : 'var(--tp-grayscale-600)' 
-                    }}>
-                      距離: {Math.round(distance)}m {inRange && '✓ 在範圍內'}
-                    </p>
-                    
-                    {quest.status === 'available' ? (
-                      <TPButton
-                        variant="primary"
-                        className="w-full"
-                        disabled={!inRange}
-                        onClick={() => onAcceptQuest(quest)}
-                      >
-                        接受任務
-                      </TPButton>
-                    ) : quest.status === 'in-progress' ? (
-                      <TPButton
-                        variant="secondary"
-                        className="w-full"
-                        disabled={!inRange}
-                        onClick={() => onCompleteQuest(quest)}
-                      >
-                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                        完成打卡
-                      </TPButton>
-                    ) : quest.status === 'completed' ? (
-                      <div 
-                        className="text-center py-2 rounded"
-                        style={{ 
-                          backgroundColor: 'var(--tp-success-100)',
-                          color: 'var(--tp-success-700)'
-                        }}
-                      >
-                        <CheckCircle2 className="w-4 h-4 inline mr-1" />
-                        已完成
-                      </div>
-                    ) : null}
-                  </div>
+                  {quest.status === 'available' ? (
+                    <TPButton
+                      variant="primary"
+                      className="w-full"
+                      disabled={!inRange}
+                      onClick={() => onAcceptQuest(quest)}
+                    >
+                      接受任務
+                    </TPButton>
+                  ) : quest.status === 'in-progress' ? (
+                    <TPButton
+                      variant="secondary"
+                      className="w-full"
+                      disabled={!inRange}
+                      onClick={() => onCompleteQuest(quest)}
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      完成打卡
+                    </TPButton>
+                  ) : quest.status === 'completed' ? (
+                    <div
+                      className="text-center py-2 rounded"
+                      style={{
+                        backgroundColor: 'var(--tp-success-100)',
+                        color: 'var(--tp-success-700)'
+                      }}
+                    >
+                      <CheckCircle2 className="w-4 h-4 inline mr-1" />
+                      已完成
+                    </div>
+                  ) : null}
                 </div>
-              </Popup>
+              </div>
+            </Popup>
 
-              {/* 任務範圍圓圈 - 只顯示在視野內的圓圈 */}
-              {isInView && (
-                <Circle
-                  center={[quest.lat, quest.lng]}
-                  radius={quest.requiredDistance || 100}
-                  pathOptions={{
-                    color: quest.status === 'completed' ? '#22c55e' : 
-                           quest.status === 'in-progress' ? '#f59e0b' : '#8b5cf6',
-                    fillColor: quest.status === 'completed' ? '#22c55e' : 
-                               quest.status === 'in-progress' ? '#f59e0b' : '#8b5cf6',
-                    fillOpacity: isFocused ? 0.2 : 0.1,
-                    dashArray: '5, 10',
-                  }}
-                />
-              )}
-            </Marker>
+            {/* 任務範圍圓圈 - 只顯示在視野內的圓圈 */}
+            {isInView && (
+              <Circle
+                center={[quest.lat, quest.lng]}
+                radius={quest.requiredDistance || 100}
+                pathOptions={{
+                  color: quest.status === 'completed' ? '#22c55e' :
+                    quest.status === 'in-progress' ? '#f59e0b' : '#8b5cf6',
+                  fillColor: quest.status === 'completed' ? '#22c55e' :
+                    quest.status === 'in-progress' ? '#f59e0b' : '#8b5cf6',
+                  fillOpacity: isFocused ? 0.2 : 0.1,
+                  dashArray: '5, 10',
+                }}
+              />
+            )}
+          </Marker>
         );
       })}
     </>
@@ -355,36 +356,40 @@ export const MapView = ({ quests, onAcceptQuest, onCompleteQuest, devMode, flyTo
   const [selectedQuest, setSelectedQuest] = useState<QuestLocation | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [hasRealLocation, setHasRealLocation] = useState(false);
+  const { getLocation } = useLocation();
+  const locationIntervalRef = useRef<number | null>(null);
 
   // 獲取用戶位置（背景執行，不阻塞地圖顯示）
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationError('您的瀏覽器不支援地理定位，顯示台北市中心');
-      return;
-    }
-
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
+    // 首次獲取位置
+    const fetchLocation = async () => {
+      const locationData = await getLocation();
+      if (locationData && locationData.success && locationData.latitude && locationData.longitude) {
         setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: position.coords.accuracy,
+          lat: locationData.latitude,
+          lng: locationData.longitude,
+          accuracy: locationData.accuracy,
         });
         setHasRealLocation(true);
         setLocationError(null);
-      },
-      (error) => {
-        console.error('定位錯誤:', error);
+      } else {
         setLocationError('無法取得您的位置，顯示台北市中心');
-      },
-      {
-        enableHighAccuracy: false, // 改為 false 以加快首次定位
-        timeout: 5000, // 縮短超時時間
-        maximumAge: 30000, // 允許使用 30 秒內的快取位置
       }
-    );
+    };
 
-    return () => navigator.geolocation.clearWatch(watchId);
+    fetchLocation();
+
+    // 每 5 秒更新一次位置
+    locationIntervalRef.current = window.setInterval(() => {
+      fetchLocation();
+    }, 5000);
+
+    return () => {
+      if (locationIntervalRef.current) {
+        clearInterval(locationIntervalRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 計算兩點之間的距離（米）
@@ -432,7 +437,7 @@ export const MapView = ({ quests, onAcceptQuest, onCompleteQuest, devMode, flyTo
           </p>
         </Card>
       )}
-      
+
       {!hasRealLocation && !locationError && (
         <Card className="p-3" style={{ backgroundColor: 'var(--tp-info-50)', borderColor: 'var(--tp-info-300)' }}>
           <p className="tp-caption" style={{ color: 'var(--tp-info-700)' }}>
@@ -443,11 +448,11 @@ export const MapView = ({ quests, onAcceptQuest, onCompleteQuest, devMode, flyTo
 
       <div className="rounded-lg overflow-hidden shadow-lg relative" style={{ height: '500px' }}>
         {!mapLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center z-50" 
-               style={{ backgroundColor: 'var(--tp-grayscale-100)' }}>
+          <div className="absolute inset-0 flex items-center justify-center z-50"
+            style={{ backgroundColor: 'var(--tp-grayscale-100)' }}>
             <div className="text-center space-y-3">
-              <div className="w-16 h-16 mx-auto rounded-full border-4 border-t-transparent animate-spin" 
-                   style={{ borderColor: 'var(--tp-primary-500)', borderTopColor: 'transparent' }}>
+              <div className="w-16 h-16 mx-auto rounded-full border-4 border-t-transparent animate-spin"
+                style={{ borderColor: 'var(--tp-primary-500)', borderTopColor: 'transparent' }}>
               </div>
               <p className="tp-body-semibold" style={{ color: 'var(--tp-grayscale-700)' }}>
                 地圖載入中...
@@ -471,16 +476,16 @@ export const MapView = ({ quests, onAcceptQuest, onCompleteQuest, devMode, flyTo
               load: () => setMapLoaded(true)
             }}
           />
-          
+
           {/* 移動到指定地點 - 只在從列表點擊時執行一次，立即顯示 */}
           {flyToQuest && (
-            <FlyToLocation 
+            <FlyToLocation
               target={[flyToQuest.lat, flyToQuest.lng]}
               questId={flyToQuest.id}
               onComplete={onFlyComplete}
             />
           )}
-          
+
           {/* 路線指引 - 當有進行中的任務時顯示 */}
           {activeQuestId && (() => {
             const activeQuest = quests.find(q => q.id === activeQuestId && q.status === 'in-progress');
@@ -495,7 +500,7 @@ export const MapView = ({ quests, onAcceptQuest, onCompleteQuest, devMode, flyTo
             }
             return null;
           })()}
-          
+
           {/* 回到我的位置按鈕 */}
           <LocationButton userLocation={userLocation} hasRealLocation={hasRealLocation} />
 

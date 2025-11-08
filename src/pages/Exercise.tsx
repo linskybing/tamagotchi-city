@@ -5,6 +5,7 @@ import { ArrowLeft, Play, Square } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
+import { useLocation } from "@/hooks/useLocation";
 import { logExercise } from "@/lib/api";
 
 type Activity = "idle" | "walking" | "jumping" | "unknown";
@@ -12,6 +13,7 @@ type Activity = "idle" | "walking" | "jumping" | "unknown";
 const Exercise: React.FC = () => {
   const navigate = useNavigate();
   const { userId, pet, refreshPet } = useUser();
+  const { getLocation } = useLocation();
 
   const [isExercising, setIsExercising] = useState(false);
   const isExercisingRef = useRef(false);
@@ -86,60 +88,58 @@ const Exercise: React.FC = () => {
   // simple helper: magnitude
   const mag = (ax: number, ay: number, az: number) => Math.sqrt(ax * ax + ay * ay + az * az);
 
-  // Weather detection using open-meteo (no API key). Attempts geolocation and checks hourly precipitation.
-  const detectWeatherNow = () => {
-    if (!navigator.geolocation) {
-      setIsRainingDetected(false);
-      toast.error("瀏覽器不支援定位，無法自動偵測天氣");
-      return;
-    }
+  // Weather detection using open-meteo (no API key). Attempts to get location and checks hourly precipitation.
+  const detectWeatherNow = async () => {
     setWeatherChecking(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
-          // request hourly precipitation and timezone=auto so times match local
-          const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation&current_weather=true&timezone=auto`;
-          const res = await fetch(url);
-          if (!res.ok) throw new Error("Weather API error");
-          const data = await res.json();
-          // find nearest hourly index for now
-          const times: string[] = data.hourly?.time ?? [];
-          const prec: number[] = data.hourly?.precipitation ?? [];
-          if (!times.length || !prec || !prec.length) {
-            setIsRainingDetected(false);
-            setWeatherChecking(false);
-            toast.error("無法取得天氣資料");
-            return;
-          }
-          // find index closest to current local time (hour aligned)
-          const now = new Date();
-          const nearestIndex = times.reduce((bestIdx: number, t, i) => {
-            const dt = Math.abs(new Date(t).getTime() - now.getTime());
-            return dt < Math.abs(new Date(times[bestIdx]).getTime() - now.getTime()) ? i : bestIdx;
-          }, 0);
-          const precipitationNow = prec[nearestIndex] ?? 0;
-          // consider raining if precipitation >= 0.5 mm/h (可自訂)
-          const raining = precipitationNow >= 0.5;
-          setIsRainingDetected(raining);
-          setWeatherChecking(false);
-          toast.success(`天氣偵測完成：${raining ? "偵測到降雨" : "無降雨"}`);
-        } catch (err) {
-          console.error(err);
-          setIsRainingDetected(false);
-          setWeatherChecking(false);
-          toast.error("取得天氣資訊失敗");
-        }
-      },
-      (err) => {
-        console.error(err);
-        setWeatherChecking(false);
+
+    try {
+      const locationData = await getLocation();
+
+      if (!locationData || !locationData.success || !locationData.latitude || !locationData.longitude) {
         setIsRainingDetected(false);
-        toast.error("無法取得定位（請允許定位）");
-      },
-      { timeout: 10000 }
-    );
+        setWeatherChecking(false);
+        toast.error("無法取得位置資訊");
+        return;
+      }
+
+      const lat = locationData.latitude;
+      const lon = locationData.longitude;
+
+      // request hourly precipitation and timezone=auto so times match local
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation&current_weather=true&timezone=auto`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Weather API error");
+      const data = await res.json();
+
+      // find nearest hourly index for now
+      const times: string[] = data.hourly?.time ?? [];
+      const prec: number[] = data.hourly?.precipitation ?? [];
+      if (!times.length || !prec || !prec.length) {
+        setIsRainingDetected(false);
+        setWeatherChecking(false);
+        toast.error("無法取得天氣資料");
+        return;
+      }
+
+      // find index closest to current local time (hour aligned)
+      const now = new Date();
+      const nearestIndex = times.reduce((bestIdx: number, t, i) => {
+        const dt = Math.abs(new Date(t).getTime() - now.getTime());
+        return dt < Math.abs(new Date(times[bestIdx]).getTime() - now.getTime()) ? i : bestIdx;
+      }, 0);
+      const precipitationNow = prec[nearestIndex] ?? 0;
+
+      // consider raining if precipitation >= 0.5 mm/h
+      const raining = precipitationNow >= 0.5;
+      setIsRainingDetected(raining);
+      setWeatherChecking(false);
+      toast.success(`天氣偵測完成：${raining ? "偵測到降雨" : "無降雨"}`);
+    } catch (err) {
+      console.error(err);
+      setIsRainingDetected(false);
+      setWeatherChecking(false);
+      toast.error("取得天氣資訊失敗");
+    }
   };
 
   // call weather detection automatically when the page/component mounts
