@@ -2,7 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin, Trophy, Navigation } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useUser } from "@/hooks/useUser";
+import { startTravelQuest, completeBreakthrough, Attraction } from "@/lib/api";
+import { toast } from "sonner";
 import TPButton from "@/components/TPButton/TPButton";
 
 const landmarks = [
@@ -74,19 +77,113 @@ const landmarks = [
 
 const Travel = () => {
   const navigate = useNavigate();
-  const [selectedLandmark, setSelectedLandmark] = useState<typeof landmarks[0] | null>(null);
+  const { userId, pet, refreshPet } = useUser();
+  const [selectedLandmark, setSelectedLandmark] = useState<Attraction | null>(null);
+  const [targetAttraction, setTargetAttraction] = useState<Attraction | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleCheckIn = (landmark: typeof landmarks[0]) => {
-    // 這裡未來會實作GPS定位檢查
-    alert(`打卡成功！獲得獎勵：${landmark.bonus.strength ? `力量值 +${landmark.bonus.strength}` : ''} ${landmark.bonus.mood ? `心情 +${landmark.bonus.mood}` : ''}`);
+  // Check if breakthrough is needed
+  const needsBreakthrough = pet && pet.level % 5 === 0 && pet.level >= 5 && !pet.breakthrough_completed;
+
+  // Load breakthrough quest when component mounts if needed
+  useEffect(() => {
+    if (needsBreakthrough && userId && !targetAttraction) {
+      loadBreakthroughQuest();
+    }
+  }, [needsBreakthrough, userId]);
+
+  const loadBreakthroughQuest = async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+      const attraction = await startTravelQuest(userId);
+      setTargetAttraction(attraction);
+      setSelectedLandmark(attraction);
+      toast.success(`突破任務：請前往 ${attraction.name}`);
+    } catch (error) {
+      console.error("Failed to load breakthrough quest:", error);
+      toast.error("無法加載突破任務");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const getBonusText = (bonus: { strength?: number; mood?: number }) => {
-    const parts = [];
-    if (bonus.strength) parts.push(`力量 +${bonus.strength}`);
-    if (bonus.mood) parts.push(`心情 +${bonus.mood}`);
-    return parts.join(', ');
+  const handleCheckIn = async (landmark: Attraction) => {
+    if (!userId) {
+      toast.error("請先登入");
+      return;
+    }
+
+    // Check if GPS is available
+    if (!navigator.geolocation) {
+      toast.error("瀏覽器不支援GPS定位");
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Get current position
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        
+        // Calculate distance (simple Haversine formula)
+        const R = 6371e3; // Earth radius in meters
+        const φ1 = (userLat * Math.PI) / 180;
+        const φ2 = (landmark.latitude * Math.PI) / 180;
+        const Δφ = ((landmark.latitude - userLat) * Math.PI) / 180;
+        const Δλ = ((landmark.longitude - userLng) * Math.PI) / 180;
+        
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c;
+        
+        // Check if within 100 meters (可調整)
+        if (distance > 100) {
+          toast.error(`距離目標還有 ${Math.round(distance)}公尺，請靠近後再打卡`);
+          setIsLoading(false);
+          return;
+        }
+
+        // Complete breakthrough if this is the target attraction
+        if (needsBreakthrough && targetAttraction?.id === landmark.id) {
+          try {
+            const result = await completeBreakthrough(userId);
+            toast.success(result.message || "突破成功！");
+            await refreshPet();
+            setTargetAttraction(null);
+          } catch (error) {
+            console.error("Failed to complete breakthrough:", error);
+            toast.error("完成突破失敗");
+          }
+        } else {
+          toast.success(`打卡成功 ${landmark.name}！`);
+        }
+        
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        toast.error("無法獲取位置，請確保已授權定位");
+        setIsLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
+
+  if (!userId) {
+    return (
+      <div className="min-h-screen p-4 flex items-center justify-center" style={{ backgroundColor: 'var(--tp-primary-50)' }}>
+        <Card className="p-6 text-center">
+          <p>請先登入</p>
+          <Button onClick={() => navigate("/")} className="mt-4">返回首頁</Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: 'var(--tp-primary-50)' }}>
