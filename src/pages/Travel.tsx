@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useInView } from "react-intersection-observer";
 import questsData from "@/data/quests.json";
-import { getUserTravelCheckins, createTravelCheckin } from "@/lib/api";
+import { getUserTravelCheckins, createTravelCheckin, completeBreakthrough } from "@/lib/api";
 import { useUser } from "@/hooks/useUser";
 
 interface QuestData {
@@ -27,7 +27,7 @@ interface QuestData {
 
 const Travel = () => {
   const navigate = useNavigate();
-  const { userId } = useUser();
+  const { userId, pet, refreshPet } = useUser();
   const [quests, setQuests] = useState<QuestLocation[]>([]);
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [devMode, setDevMode] = useState(false);

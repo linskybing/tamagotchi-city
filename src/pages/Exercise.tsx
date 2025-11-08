@@ -155,6 +155,12 @@ const Exercise: React.FC = () => {
   }, []);
 
   const startExercise = () => {
+    // 檢查體力是否足夠
+    if (pet && pet.stamina <= 0) {
+      toast.error("體力不足！無法開始運動");
+      return;
+    }
+
     setIsExercising(true);
     isExercisingRef.current = true;
 
@@ -294,7 +300,7 @@ const Exercise: React.FC = () => {
     }
 
     try {
-      const newStrength = Math.min(pet.strength + 30, 100);
+      const newStrength = pet.strength + 30;
       await updateUserPet(userId, {
         strength: newStrength
       });

@@ -68,7 +68,7 @@ const Welcome = () => {
 
             if (!townpassId) {
                 // 如果沒有 TownPass ID，使用預設測試帳號
-                const defaultUserId = "test-user-001";
+                const defaultUserId = "1";
                 setUserId(defaultUserId);
                 toast({
                     title: "歡迎！",

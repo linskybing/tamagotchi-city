@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from "react";
 import { User, Pet, getUserPet } from "@/lib/api";
 
 interface UserContextType {
@@ -31,7 +31,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [userId]);
 
   // Fetch pet data when userId changes
-  const refreshPet = async () => {
+  const refreshPet = useCallback(async () => {
     if (!userId) {
       setPet(null);
       return;
@@ -52,7 +52,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
   // Polling: periodically refresh pet from backend to keep stats up-to-date.
   // Enabled by default for option 1 behavior. Polling will pause when the
