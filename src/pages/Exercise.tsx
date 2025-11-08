@@ -89,8 +89,7 @@ const Exercise: React.FC = () => {
   // Optional debug flag (kept but default off)
   const [DEBUG] = useState<boolean>(false);
 
-  // minimal UI controls: user can mark "outdoor" and "raining" for rewards
-  const [isOutdoor, setIsOutdoor] = useState<boolean>(false);
+  // minimal UI controls: user can mark "raining" for rewards
   // manualRain 已改用全局 hook (useManualRain)，在上方宣告
 
   // automatic weather detection state
@@ -313,9 +312,9 @@ const Exercise: React.FC = () => {
       totalMultiplier *= 1 + morningBonusPercent / 100;
     }
 
-    // 判定雨天戶外獎勵（需戶外且自動或手動標示下雨）
+    // 判定雨天戶外獎勵（需自動或手動標示下雨）
     const raining = manualRain || isRainingDetected;
-    if (isOutdoor && raining) {
+    if (raining) {
       totalMultiplier *= 1 + rainyBonusPercent / 100;
     }
 
@@ -781,17 +780,7 @@ const Exercise: React.FC = () => {
           )}
 
           {/* Minimal user-facing controls (compact) */}
-          <div className="flex items-center justify-between mt-3 text-sm">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={isOutdoor}
-                onChange={(e) => setIsOutdoor(e.target.checked)}
-                className="form-checkbox"
-              />
-              戶外運動
-            </label>
-
+          <div className="flex items-center justify-center mt-3 text-sm">
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
