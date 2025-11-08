@@ -54,23 +54,18 @@ export const useLocation = (): UseLocationReturn => {
 
                 const handleMessage = (event: MessageEvent) => {
                     try {
-                        console.log('Location raw event.data:', event.data);
                         const response = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-                        console.log('Location parsed response:', response);
 
                         // 確認是 location 的回應
                         if (response.name === 'location') {
                             cleanup();
 
                             let locationData = response.data;
-                            console.log('Location data before parsing:', locationData);
 
                             // If data is a string, parse it
                             if (typeof locationData === 'string') {
                                 locationData = JSON.parse(locationData);
                             }
-
-                            console.log('Location data after parsing:', locationData);
 
                             // TownPass 返回的資料沒有 success 欄位，只要有 latitude 和 longitude 就是成功
                             if (locationData && typeof locationData.latitude === 'number' && typeof locationData.longitude === 'number') {
@@ -84,7 +79,6 @@ export const useLocation = (): UseLocationReturn => {
                                     speed: locationData.speed,
                                     timestamp: locationData.timestamp?.toString(),
                                 };
-                                console.log('位置資訊 (TownPass):', result);
                                 setLocation(result);
                                 setLoading(false);
                                 resolve(result);
@@ -110,7 +104,6 @@ export const useLocation = (): UseLocationReturn => {
 
                 // 設定超時
                 timeoutRef.current = window.setTimeout(() => {
-                    console.warn('位置請求超時');
                     setError('請求超時');
                     setLoading(false);
                     cleanup();
@@ -120,11 +113,8 @@ export const useLocation = (): UseLocationReturn => {
                 // 發送請求
                 try {
                     const message = JSON.stringify({ name: 'location', data: null });
-                    console.log('Sending location request:', message);
                     window.flutterObject.postMessage(message);
                 } catch (err) {
-                    console.error('發送位置請求失敗:', err);
-                    setError('發送位置請求失敗');
                     setLoading(false);
                     cleanup();
                     resolve(null);
@@ -134,8 +124,6 @@ export const useLocation = (): UseLocationReturn => {
 
         // Fallback: 使用瀏覽器的 Geolocation API
         else {
-            console.log('TownPass 不可用，使用瀏覽器 Geolocation API');
-
             if (!navigator.geolocation) {
                 const errorMsg = '您的瀏覽器不支援定位功能';
                 setError(errorMsg);
@@ -157,7 +145,6 @@ export const useLocation = (): UseLocationReturn => {
                             timestamp: new Date(position.timestamp).toISOString(),
                         };
 
-                        console.log('位置資訊 (Browser):', locationData);
                         setLocation(locationData);
                         setLoading(false);
                         resolve(locationData);

@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Pet from "@/components/Pet";
 import StatBar from "@/components/StatBar";
 import ActionButton from "@/components/ActionButton";
-import { Dumbbell, Map } from "lucide-react";
+import { Dumbbell, Map, AlertTriangle } from "lucide-react";
 import chickenSport from "@/assets/image/chicken_sport.png";
 import chickenTravel from "@/assets/image/chicken_travel.png";
 import EditIconSvg from "@/assets/svg/edit.svg";
@@ -19,6 +19,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import TPButton from "@/components/TPButton/TPButton";
 import { useUser } from "@/hooks/useUser";
@@ -37,14 +47,10 @@ const Index = () => {
   const [hasCheckedDaily, setHasCheckedDaily] = useState(false);
   const [entranceStage, setEntranceStage] = useState<'egg' | 'hatching' | 'done'>('egg');
   const [typedText, setTypedText] = useState("");
+  const [showBreakthroughDialog, setShowBreakthroughDialog] = useState(false);
 
   // Rain effect - 使用全局的 manualRain 狀態
   const isRaining = manualRain;
-
-  // Debug: 檢查 rain 狀態
-  useEffect(() => {
-    console.log('Index.tsx - manualRain:', manualRain, 'isRaining:', isRaining);
-  }, [manualRain, isRaining]);
 
   // Perform daily check when component mounts
   useEffect(() => {
@@ -78,6 +84,13 @@ const Index = () => {
     };
     checkDaily();
   }, [userId, hasCheckedDaily, pet, refreshPet, toast]);
+
+  // 檢測是否需要突破任務
+  useEffect(() => {
+    if (pet && pet.level >= 5 && pet.level % 5 === 0 && !pet.breakthrough_completed) {
+      setShowBreakthroughDialog(true);
+    }
+  }, [pet]);
 
   // 入場動畫
   useEffect(() => {
@@ -118,6 +131,43 @@ const Index = () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
+  }, []);
+
+  const alreadyNotifiedRef = useRef(false);
+
+  useEffect(() => {
+    const checkEarlyBirdTime = () => {
+      const now = new Date();
+      const hour = now.getHours();
+
+      // Demo: 1-5
+      const isEarlyBirdTime = true;
+
+      if (isEarlyBirdTime && window.flutterObject && !alreadyNotifiedRef.current) {
+        try {
+          const message = JSON.stringify({
+            name: "notify",
+            data: {
+              title: "🐔 早雞時段！",
+              content: "現在運動可獲得 +15% 加成！"
+            }
+          });
+          window.flutterObject.postMessage(message);
+          alreadyNotifiedRef.current = true;
+        } catch (error) {
+          console.error("[早雞通知] 發送失敗:", error);
+        }
+      }
+
+      // 如果時段結束 -> 重置
+      if (!isEarlyBirdTime) {
+        alreadyNotifiedRef.current = false;
+      }
+    };
+
+    checkEarlyBirdTime();
+    const interval = setInterval(checkEarlyBirdTime, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   // 打字機效果（入場期間顯示）
@@ -419,6 +469,34 @@ const Index = () => {
           </main>
         </div>
       </div>
+
+      {/* 突破任務提醒 Dialog */}
+      <AlertDialog open={showBreakthroughDialog} onOpenChange={setShowBreakthroughDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-6 h-6 text-yellow-500" />
+              需要完成突破任務！
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>恭喜達到 Lv.{pet?.level} 突破等級！</p>
+              <p className="font-semibold text-foreground">
+                你的手雞已經無法繼續獲得力量值了！
+              </p>
+              <p>
+                請前往<span className="text-primary font-semibold">「旅遊小雞」</span>頁面，
+                完成景點打卡來突破等級限制。
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>稍後再說</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/travel")}>
+              立即前往
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 };

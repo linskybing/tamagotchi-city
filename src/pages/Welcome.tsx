@@ -19,7 +19,6 @@ const Welcome = () => {
 
     // Show that page started loading
     useEffect(() => {
-        console.log("Welcome page mounted");
         setPageLoaded(true);
 
         // Global error handler
@@ -114,7 +113,7 @@ const Welcome = () => {
                 <div className="text-center space-y-2">
                     <div className="text-6xl mb-4">🐣</div>
                     <h1 className="tp-h1-bold" style={{ color: 'var(--tp-primary-700)' }}>
-                        歡迎來到手雞城市
+                        歡迎來到雞動城市
                     </h1>
                     <p className="tp-body-regular" style={{ color: 'var(--tp-grayscale-600)' }}>
                         給你的寵物取個名字，開始你的健身之旅！
@@ -133,36 +132,6 @@ const Welcome = () => {
                             </pre>
                         </div>
                     )}
-
-                    {/* Debug Info */}
-                    <div className="text-left p-3 rounded-lg" style={{ backgroundColor: 'var(--tp-grayscale-100)', borderColor: 'var(--tp-grayscale-300)', borderWidth: '1px' }}>
-                        <p className="tp-body-semibold mb-2" style={{ color: 'var(--tp-grayscale-700)' }}>
-                            Debug Info:
-                        </p>
-                        <div className="space-y-1 text-xs font-mono" style={{ color: 'var(--tp-grayscale-600)' }}>
-                            <p>User ID: {townpassUser?.id || 'No user'}</p>
-                            <p>User Name: {townpassUser?.name || 'N/A'}</p>
-                            <p>Loading: {isTownPassLoading ? 'Yes' : 'No'}</p>
-                            <p>flutterObject: {(window as any).flutterObject ? 'Yes ✓' : 'No'}</p>
-                            <p>townpass_channel: {(window as any).townpass_message_channel ? 'Yes' : 'No'}</p>
-                            <p>TownPass obj: {(window as any).TownPass ? 'Yes' : 'No'}</p>
-                            <p>webkit: {(window as any).webkit ? 'Yes' : 'No'}</p>
-                            <p>ReactNative: {(window as any).ReactNativeWebView ? 'Yes' : 'No'}</p>
-                            <p>Window keys with 'town': {Object.keys(window).filter(k => k.toLowerCase().includes('town')).join(', ') || 'None'}</p>
-                            <p>Window keys with 'flutter': {Object.keys(window).filter(k => k.toLowerCase().includes('flutter')).join(', ') || 'None'}</p>
-                        </div>
-                        <Button
-                            onClick={() => {
-                                requestTownPassUser();
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="mt-2 w-full"
-                        >
-                            重新檢測 TownPass
-                        </Button>
-                    </div>
-
                     {/* TownPass Status */}
                     {isTownPassLoading && (
                         <div className="text-center p-3 rounded-lg" style={{ backgroundColor: 'var(--tp-primary-50)' }}>

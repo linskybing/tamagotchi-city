@@ -1,11 +1,11 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, TrendingUp, CheckCircle2, Circle } from "lucide-react";
+import { ArrowLeft, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/hooks/useUser";
-import { getDailyQuests, getUser } from "@/lib/api";
+import { getUser } from "@/lib/api";
 import { useEffect, useState } from "react";
-import type { UserQuest } from "@/lib/api";
+import DailyQuests from "@/components/DailyQuests";
 
 // Format seconds into H:MM:SS or M:SS
 function formatDuration(totalSeconds: number): string {
@@ -20,55 +20,7 @@ function formatDuration(totalSeconds: number): string {
 
 const Status = () => {
   const navigate = useNavigate();
-  const { userId, pet } = useUser();
-  const [quests, setQuests] = useState<UserQuest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [todaySteps, setTodaySteps] = useState<number | null>(null);
-  const [todayExerciseSeconds, setTodayExerciseSeconds] = useState<number | null>(null);
-
-  useEffect(() => {
-    const fetchQuests = async () => {
-      if (!userId) return;
-      try {
-        const questData = await getDailyQuests(userId);
-        setQuests(questData);
-      } catch (error) {
-        console.error("Failed to fetch quests:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchQuests();
-  }, [userId]);
-
-  // Fetch user's exercise logs (from getUser) and compute today's totals
-  useEffect(() => {
-    const fetchUserAndCompute = async () => {
-      if (!userId) return;
-      try {
-        const u = await getUser(userId);
-        const logs = u.exercise_logs ?? [];
-        const today = new Date().toISOString().split("T")[0];
-        let stepsSum = 0;
-        let secondsSum = 0;
-        for (const l of logs) {
-          const date = l.created_at.split("T")[0];
-          if (date === today) {
-            // assume volume represents steps for step-type exercises
-            stepsSum += Number(l.volume ?? 0);
-            secondsSum += Number(l.duration_seconds ?? 0);
-          }
-        }
-        setTodaySteps(stepsSum);
-        setTodayExerciseSeconds(secondsSum);
-      } catch (error) {
-        console.error("Failed to fetch user/exercise logs:", error);
-        setTodaySteps(null);
-        setTodayExerciseSeconds(null);
-      }
-    };
-    fetchUserAndCompute();
-  }, [userId]);
+  const { userId, pet, refreshPet } = useUser();
 
   if (!pet) {
     return (
@@ -82,9 +34,10 @@ const Status = () => {
     );
   }
 
-  const completedQuests = quests.filter(q => q.is_completed).length;
-  const totalQuests = quests.length;
   const currentLevelStrength = pet.strength % 120;
+  // 直接從 pet 取得今日運動數據
+  const todaySteps = pet.daily_steps || 0;
+  const todayExerciseSeconds = pet.daily_exercise_seconds || 0;
 
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: 'var(--tp-primary-50)' }}>
@@ -166,67 +119,7 @@ const Status = () => {
         </Card>
 
         {/* Daily Quests */}
-        <Card className="p-6" style={{ backgroundColor: 'var(--tp-white)', borderColor: 'var(--tp-primary-200)' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="w-5 h-5" style={{ color: 'var(--tp-primary-600)' }} />
-            <div className="tp-h3-semibold" style={{ color: 'var(--tp-grayscale-800)' }}>
-              每日任務
-            </div>
-            <span className="ml-auto tp-body-regular" style={{ color: 'var(--tp-grayscale-600)' }}>
-              {completedQuests}/{totalQuests}
-            </span>
-          </div>
-          {isLoading ? (
-            <div className="tp-body-regular" style={{ color: 'var(--tp-grayscale-500)' }}>
-              載入中...
-            </div>
-          ) : quests.length === 0 ? (
-            <div className="tp-body-regular" style={{ color: 'var(--tp-grayscale-500)' }}>
-              暫無任務
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {quests.map((userQuest) => (
-                <div
-                  key={userQuest.id}
-                  className="flex items-start gap-3 p-3 rounded-lg"
-                  style={{ backgroundColor: userQuest.is_completed ? 'var(--tp-green-50)' : 'var(--tp-primary-50)' }}
-                >
-                  {userQuest.is_completed ? (
-                    <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--tp-green-600)' }} />
-                  ) : (
-                    <Circle className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--tp-grayscale-400)' }} />
-                  )}
-                  <div className="flex-1">
-                    <div className="tp-body-semibold" style={{ color: 'var(--tp-grayscale-800)' }}>
-                      {userQuest.quest.title}
-                    </div>
-                    <div className="tp-caption" style={{ color: 'var(--tp-grayscale-500)' }}>
-                      {userQuest.quest.description}
-                    </div>
-                    <div className="flex gap-2 mt-1">
-                      {userQuest.quest.reward_strength > 0 && (
-                        <span className="tp-caption" style={{ color: 'var(--tp-secondary-600)' }}>
-                          💪 +{userQuest.quest.reward_strength}
-                        </span>
-                      )}
-                      {userQuest.quest.reward_stamina > 0 && (
-                        <span className="tp-caption" style={{ color: 'var(--tp-primary-600)' }}>
-                          ❤️ +{userQuest.quest.reward_stamina}
-                        </span>
-                      )}
-                      {userQuest.quest.reward_mood > 0 && (
-                        <span className="tp-caption" style={{ color: 'var(--tp-orange-600)' }}>
-                          😊 +{userQuest.quest.reward_mood}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+        <DailyQuests userId={userId} onQuestCompleted={refreshPet} />
       </div>
     </div>
   );

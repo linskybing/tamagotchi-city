@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { useLocation } from "@/hooks/useLocation";
 import { useManualRain } from "@/hooks/useWeather";
-import { logExercise, updateUserPet } from "@/lib/api";
+import { logExercise, updateUserPet, getDailyStats } from "@/lib/api";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -26,6 +26,10 @@ const Exercise: React.FC = () => {
   const durationIntervalRef = useRef<number | null>(null);
 
   const [steps, setSteps] = useState(0);
+
+  // 今日累計數據
+  const [dailyMinutes, setDailyMinutes] = useState(0);
+  const [dailySteps, setDailySteps] = useState(0);
 
   // Wake Lock 相關
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -163,6 +167,21 @@ const Exercise: React.FC = () => {
     detectWeatherNow();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 載入今日累計數據
+  useEffect(() => {
+    const loadDailyStats = async () => {
+      if (!userId) return;
+
+      try {
+        const stats = await getDailyStats(userId);
+        setDailyMinutes(Math.floor(stats.daily_exercise_seconds / 60));
+        setDailySteps(stats.daily_steps);
+      } catch (error) {
+        console.error('Failed to load daily stats:', error);
+      }
+    }; loadDailyStats();
+  }, [userId]);
 
   const startExercise = () => {
     // 檢查體力是否足夠
@@ -309,10 +328,9 @@ const Exercise: React.FC = () => {
       logExercise(userId, {
         exercise_type: activity || "unknown",
         duration_seconds: duration,
-        volume: steps,
+        steps: steps,
       })
         .then(async (result) => {
-          console.log("Exercise result:", result);
           // 計算力量增長 = 運動後力量 - 運動前力量
           const strengthAfter = result.pet?.strength || 0;
           const strengthGained = strengthAfter - strengthBefore;
@@ -347,8 +365,17 @@ const Exercise: React.FC = () => {
             toast.info("恭喜達到突破等級！請前往旅遊完成突破任務");
           }
 
-          // 刷新寵物數據
+          // 刷新寵物數據（運動統計已在後端 log_exercise 中自動更新）
           await refreshPet();
+
+          // 重新載入今日累計數據
+          try {
+            const stats = await getDailyStats(userId);
+            setDailyMinutes(Math.floor(stats.daily_exercise_seconds / 60));
+            setDailySteps(stats.daily_steps);
+          } catch (error) {
+            console.error('Failed to reload daily stats:', error);
+          }
         })
         .catch((error) => {
           console.error("Failed to log exercise:", error);
@@ -442,24 +469,6 @@ const Exercise: React.FC = () => {
 
     const windowSec = Math.max(0.001, (buf[buf.length - 1].t - buf[0].t) / 1000);
     const cadenceHz = peaksMag / windowSec;
-
-    if (DEBUG) {
-      // eslint-disable-next-line no-console
-      console.debug({
-        meanMag,
-        stdMag,
-        maxMag,
-        peaksMag,
-        peaksZ,
-        windowSec,
-        cadenceHz,
-        stepThreshold,
-        magPeakThreshold,
-        jumpAmpThreshold,
-        cadenceWalkingMin,
-        cadenceWalkingMax,
-      });
-    }
 
     // classification using hard-coded thresholds
     const isLikelyJump =
@@ -560,10 +569,6 @@ const Exercise: React.FC = () => {
       if (delta > stepThreshold && now - lastStepTimeRef.current > minStepInterval) {
         setSteps((prev) => prev + 1);
         lastStepTimeRef.current = now;
-        if (DEBUG) {
-          // eslint-disable-next-line no-console
-          console.debug("step detected. delta:", delta, "linearMag:", linearMag);
-        }
       }
 
       // start periodic feature computation timer if not exist
@@ -591,7 +596,6 @@ const Exercise: React.FC = () => {
         window.removeEventListener("devicemotion", motionHandlerRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -688,15 +692,31 @@ const Exercise: React.FC = () => {
             )}
           </Card>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-muted rounded-lg p-4 text-center">
-              <div className="text-3xl font-bold text-primary">{duration}秒</div>
-              <div className="text-sm text-muted-foreground mt-1">運動時長</div>
+          <div className="space-y-3">
+            {/* 本次運動數據 */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-muted rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-primary">{duration}秒</div>
+                <div className="text-sm text-muted-foreground mt-1">本次時長</div>
+              </div>
+
+              <div className="bg-muted rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-primary">{steps}</div>
+                <div className="text-sm text-muted-foreground mt-1">本次步數</div>
+              </div>
             </div>
 
-            <div className="bg-muted rounded-lg p-4 text-center">
-              <div className="text-3xl font-bold text-primary">{steps}</div>
-              <div className="text-sm text-muted-foreground mt-1">步數</div>
+            {/* 今日累計數據 */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-primary/10 rounded-lg p-4 text-center border-2 border-primary/20">
+                <div className="text-2xl font-bold text-primary">{dailyMinutes}分鐘</div>
+                <div className="text-xs text-muted-foreground mt-1">今日累計運動</div>
+              </div>
+
+              <div className="bg-primary/10 rounded-lg p-4 text-center border-2 border-primary/20">
+                <div className="text-2xl font-bold text-primary">{dailySteps}</div>
+                <div className="text-xs text-muted-foreground mt-1">今日累計步數</div>
+              </div>
             </div>
           </div>
 

@@ -30,6 +30,11 @@ export interface Pet {
     breakthrough_completed: boolean;
     updated_at: string;
     last_daily_check?: string | null;
+    daily_steps?: number;  // 今日步數
+    daily_exercise_seconds?: number;  // 今日運動秒數
+    daily_quest_1_completed?: boolean;
+    daily_quest_2_completed?: boolean;
+    daily_quest_3_completed?: boolean;
 }
 
 export interface PetUpdate {
@@ -55,7 +60,7 @@ export interface ExerciseLog {
 export interface ExerciseLogCreate {
     exercise_type: string;
     duration_seconds: number;
-    volume: number;
+    steps: number;
 }
 
 export interface ExerciseResult {
@@ -106,6 +111,42 @@ export interface BreakthroughResult {
     success: boolean;
     pet: Pet;
     message: string;
+}
+
+// 每日統計
+export interface DailyStats {
+    daily_exercise_seconds: number;
+    daily_steps: number;
+    last_reset_date: string | null;
+}
+
+// 每日任務相關（匹配後端實際返回格式）
+export interface DailyQuestStatus {
+    quest_1_completed: boolean;
+    quest_2_completed: boolean;
+    quest_3_completed: boolean;
+}
+
+export interface ClaimQuestResult {
+    success: boolean;
+    message: string;
+    pet?: Pet;
+    rewards?: {
+        strength: number;
+        stamina: number;
+        mood: number;
+    };
+}
+
+// 累計統計相關（後端未實作，暫時保留介面）
+export interface ExerciseStats {
+    user_id: string;
+    total_exercise_time: number;  // 總運動時間（秒）
+    total_steps: number;  // 總步數
+    today_exercise_time: number;  // 今日運動時間（秒）
+    today_steps: number;  // 今日步數
+    this_week_exercise_time: number;  // 本週運動時間（秒）
+    this_week_steps: number;  // 本週步數
 }
 
 export interface TravelCheckin {
@@ -163,6 +204,15 @@ export async function getUserPet(userId: string): Promise<Pet> {
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.detail || "Failed to get pet");
+    }
+    return response.json();
+}
+
+export async function getDailyStats(userId: string): Promise<DailyStats> {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/daily-stats`);
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to get daily stats");
     }
     return response.json();
 }
@@ -309,3 +359,36 @@ export function getStageName(stage: number): "egg" | "small" | "medium" | "large
     };
     return stageMap[stage] || "small";
 }
+
+// ==================
+// 每日任務 API
+// ==================
+
+// 獲取用戶每日任務狀態
+export async function getUserDailyQuests(userId: string): Promise<DailyQuestStatus> {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/daily-quests`);
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to get daily quests");
+    }
+    return response.json();
+}
+
+// 領取任務獎勵（後端會檢查任務是否完成）
+export async function claimDailyQuest(
+    userId: string,
+    questId: number
+): Promise<ClaimQuestResult> {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/daily-quests/${questId}/claim`, {
+        method: "POST",
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to claim quest");
+    }
+    return response.json();
+}
+
+// ==================
+// 運動統計 API
+// ==================

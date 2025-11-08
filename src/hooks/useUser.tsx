@@ -45,7 +45,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       console.error("Failed to fetch pet:", error);
       // If pet not found, clear userId and redirect to welcome
       if (error instanceof Error && error.message.includes("not found")) {
-        console.log("Pet not found, clearing userId");
         setUserId(null);
         setPet(null);
       }
