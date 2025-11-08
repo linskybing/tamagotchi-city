@@ -79,12 +79,48 @@ const Index = () => {
     return "咕咕！準備好一起運動了嗎？";
   };
 
-  // 入場動畫
+  // 入場動畫：egg 旋轉 -> hatch pop -> 顯示 small 並關閉 overlay
+  const [entranceStage, setEntranceStage] = useState<'egg' | 'hatching' | 'done'>('egg');
+  const [typedText, setTypedText] = useState("");
+
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // 確保一開始是蛋狀態
+    setPetStage('egg');
+
+    const rotateDur = 2000; // ms (match egg-rotate 2s)
+    const hatchDur = 1000; // ms
+
+    const t1 = setTimeout(() => {
+      setEntranceStage('hatching');
+    }, rotateDur);
+
+    const t2 = setTimeout(() => {
+      // 完成孵化，將 pet stage 改為 small，並關閉入場 overlay
+      setPetStage('small');
+      setEntranceStage('done');
       setShowEntrance(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    }, rotateDur + hatchDur);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
+
+  // 打字機效果（入場期間顯示）
+  useEffect(() => {
+    const title = "Pet Fitness";
+    let idx = 0;
+    setTypedText("");
+    const typeInterval = setInterval(() => {
+      setTypedText((prev) => prev + title[idx]);
+      idx += 1;
+      if (idx >= title.length) {
+        clearInterval(typeInterval);
+      }
+    }, 120);
+
+    return () => clearInterval(typeInterval);
   }, []);
 
   const handleNameEdit = () => {
@@ -98,27 +134,50 @@ const Index = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--tp-primary-50)' }}>
-        {/* Entrance Animation */}
+        {/* Entrance Animation: egg rotate -> hatch -> pop into small */}
         {showEntrance && (
-          <div 
+          <div
             className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ backgroundColor: 'var(--tp-grayscale-800)' }}
+            style={{ backgroundColor: '#EDF8FA' }}
           >
-            <div className="relative">
-              <div 
-                className="absolute inset-0 border-8 animate-pulse"
-                style={{ 
-                  borderColor: 'var(--tp-secondary-500)',
-                  animation: 'fade-out 1.5s ease-out forwards'
-                }}
-              />
-              <div 
-                className="text-6xl animate-bounce"
-                style={{ 
-                  animation: 'scale-in 1s ease-out'
-                }}
-              >
-                🐣
+            {/* Inline keyframes for the small set of animations */}
+            <style>{`
+              @keyframes egg-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+              @keyframes hatch-pop { 0% { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+              @keyframes overlay-fade { from { opacity: 1; } to { opacity: 0; } }
+              @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+            `}</style>
+
+            <div className="relative flex items-center justify-center">
+              {entranceStage === 'egg' && (
+                <div
+                  className="text-6xl"
+                  style={{
+                    animation: 'egg-rotate 2s linear infinite',
+                    display: 'inline-block'
+                  }}
+                >
+                  🥚
+                </div>
+              )}
+
+              {entranceStage === 'hatching' && (
+                <div
+                  className="text-6xl"
+                  style={{
+                    animation: 'hatch-pop 1s ease-out forwards',
+                    display: 'inline-block'
+                  }}
+                >
+                  🐣
+                </div>
+              )}
+              {/* 打字機文字 */}
+              <div className="w-full flex justify-center mt-4">
+                <div style={{ fontFamily: 'monospace', fontSize: 18, color: 'var(--tp-grayscale-800)' }}>
+                  {typedText}
+                  <span style={{ display: 'inline-block', width: 10, marginLeft: 4, animation: 'blink 1s step-end infinite' }}>|</span>
+                </div>
               </div>
             </div>
           </div>
