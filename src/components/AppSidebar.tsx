@@ -31,18 +31,27 @@ const DAILY_QUESTS = [
     title: "每日登錄",
     description: "登錄遊戲即可完成",
     reward: "💪+5 ⚡+5 😊+5",
+    reward_strength: 5,
+    reward_stamina: 5,
+    reward_mood: 5,
   },
   {
     id: 2,
     title: "運動達人",
     description: "累計運動 10 分鐘",
     reward: "💪+10 😊+5",
+    reward_strength: 10,
+    reward_stamina: 0,
+    reward_mood: 5,
   },
   {
     id: 3,
     title: "步行挑戰",
     description: "累計步行 5000 步",
     reward: "💪+10 😊+5",
+    reward_strength: 10,
+    reward_stamina: 0,
+    reward_mood: 5,
   },
 ];
 

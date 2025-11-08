@@ -49,10 +49,12 @@ const DailyQuests = ({ userId, onQuestCompleted }: DailyQuestsProps) => {
         setIsLoading(true);
         try {
             const data = await getUserDailyQuests(userId);
+            console.log('DailyQuests - API response:', data);
             // 將已完成的任務 ID 存入 Set
             const completed = new Set(
                 data.quests.filter(q => q.completed).map(q => q.id)
             );
+            console.log('DailyQuests - Completed quest IDs:', Array.from(completed));
             setCompletedQuests(completed);
         } catch (error) {
             console.error("Failed to load daily quests:", error);
@@ -104,6 +106,7 @@ const DailyQuests = ({ userId, onQuestCompleted }: DailyQuestsProps) => {
             </h2>
             {DAILY_QUESTS.map((quest) => {
                 const isCompleted = completedQuests.has(quest.id);
+                console.log(`Quest ${quest.id} (${quest.title}):`, isCompleted ? 'COMPLETED' : 'NOT completed');
 
                 return (
                     <Card key={quest.id} className="p-4">
