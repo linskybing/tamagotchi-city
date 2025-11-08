@@ -192,7 +192,46 @@ export function useTownPassAuth(opts?: { debug?: boolean; timeout?: number; auth
       if (ok) cleanup();
     };
 
-    // register townpass_message_channel listener if present
+    // register flutterObject listener if present (TownPass uses this!)
+    try {
+      if (win?.flutterObject) {
+        log("found flutterObject, attaching listener");
+        const flutterHandler = (ev: any) => {
+          log("flutterObject message received:", ev);
+          // ev.data contains the response string
+          let data = ev?.data ?? ev;
+          if (typeof data === "string") {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              log("flutterObject data parse failed", e);
+            }
+          }
+          log("flutterObject parsed data:", data);
+
+          // Response format: { name: 'userid', data: 'user_id_value' }
+          if (data?.name === 'userid' && data?.data) {
+            // Convert to TownPassUser format
+            const userData = {
+              id: data.data,
+            };
+            log("Converted to TownPassUser:", userData);
+            const ok = handleIncomingRaw(userData);
+            if (ok) cleanup();
+          }
+        };
+        channelListenerRef.current = flutterHandler;
+        if (typeof win.flutterObject.addEventListener === "function") {
+          win.flutterObject.addEventListener("message", flutterHandler);
+        } else {
+          win.flutterObject.onmessage = flutterHandler;
+        }
+      }
+    } catch (e) {
+      log("error attaching flutterObject listener", e);
+    }
+
+    // register townpass_message_channel listener if present (fallback)
     try {
       if (win?.townpass_message_channel) {
         log("found townpass_message_channel, attaching listener");
@@ -206,7 +245,6 @@ export function useTownPassAuth(opts?: { debug?: boolean; timeout?: number; auth
           const ok = handleIncomingRaw(parsed);
           if (ok) cleanup();
         };
-        channelListenerRef.current = channelHandler;
         if (typeof win.townpass_message_channel.addEventListener === "function") {
           win.townpass_message_channel.addEventListener("message", channelHandler);
         } else {
@@ -226,7 +264,35 @@ export function useTownPassAuth(opts?: { debug?: boolean; timeout?: number; auth
       cleanup();
     }, timeout);
 
-    // Now send request through multiple channels (best-effort)
+    // Now send request through flutterObject (TownPass uses this!)
+    try {
+      if (win?.flutterObject && typeof win.flutterObject.postMessage === "function") {
+        // Request userid from TownPass using correct message format
+        const message = JSON.stringify({ name: 'userid', data: null });
+        log("Sending to flutterObject.postMessage:", message);
+        win.flutterObject.postMessage(message);
+      } else {
+        log("flutterObject.postMessage not available");
+      }
+    } catch (e) {
+      log("flutterObject.postMessage error", e);
+    }
+
+    // Fallback: Try townpass_message_channel
+    try {
+      if (win?.townpass_message_channel && typeof win.townpass_message_channel.postMessage === "function") {
+        // Request userid from TownPass using correct message format
+        const message = JSON.stringify({ name: 'userid', data: null });
+        log("Sending to townpass_message_channel.postMessage:", message);
+        win.townpass_message_channel.postMessage(message);
+      } else {
+        log("townpass_message_channel.postMessage not available");
+      }
+    } catch (e) {
+      log("townpass_message_channel.postMessage error", e);
+    }
+
+    // Fallback: Try other methods
     try {
       // iOS WKWebView handler
       if (win?.webkit?.messageHandlers?.TownPass) {

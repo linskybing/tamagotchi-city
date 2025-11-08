@@ -98,11 +98,13 @@ const Welcome = () => {
                             <p>User ID: {townpassUser?.id || 'No user'}</p>
                             <p>User Name: {townpassUser?.name || 'N/A'}</p>
                             <p>Loading: {isTownPassLoading ? 'Yes' : 'No'}</p>
+                            <p>flutterObject: {(window as any).flutterObject ? 'Yes ✓' : 'No'}</p>
                             <p>townpass_channel: {(window as any).townpass_message_channel ? 'Yes' : 'No'}</p>
                             <p>TownPass obj: {(window as any).TownPass ? 'Yes' : 'No'}</p>
                             <p>webkit: {(window as any).webkit ? 'Yes' : 'No'}</p>
                             <p>ReactNative: {(window as any).ReactNativeWebView ? 'Yes' : 'No'}</p>
                             <p>Window keys with 'town': {Object.keys(window).filter(k => k.toLowerCase().includes('town')).join(', ') || 'None'}</p>
+                            <p>Window keys with 'flutter': {Object.keys(window).filter(k => k.toLowerCase().includes('flutter')).join(', ') || 'None'}</p>
                         </div>
                         <Button
                             onClick={() => {
