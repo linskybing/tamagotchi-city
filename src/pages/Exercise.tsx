@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
 import { useLocation } from "@/hooks/useLocation";
 import { useManualRain } from "@/hooks/useWeather";
-import { logExercise, updateUserPet, getDailyStats } from "@/lib/api";
+import { logExercise, updateUserPet } from "@/lib/api";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -170,18 +170,11 @@ const Exercise: React.FC = () => {
 
   // 載入今日累計數據
   useEffect(() => {
-    const loadDailyStats = async () => {
-      if (!userId) return;
-      try {
-        const stats = await getDailyStats(userId);
-        setDailyMinutes(Math.floor(stats.daily_exercise_seconds / 60));
-        setDailySteps(stats.daily_steps);
-      } catch (error) {
-        console.error("Failed to load daily stats:", error);
-      }
-    };
-    loadDailyStats();
-  }, [userId]);
+    if (pet) {
+      setDailyMinutes(Math.floor((pet.daily_exercise_seconds || 0) / 60));
+      setDailySteps(pet.daily_steps || 0);
+    }
+  }, [pet]);
 
   const startExercise = () => {
     // 檢查體力是否足夠
@@ -368,15 +361,6 @@ const Exercise: React.FC = () => {
 
           // 刷新寵物數據（運動統計已在後端 log_exercise 中自動更新）
           await refreshPet();
-
-          // 更新今日累計數據
-          try {
-            const stats = await getDailyStats(userId);
-            setDailyMinutes(Math.floor(stats.daily_exercise_seconds / 60));
-            setDailySteps(stats.daily_steps);
-          } catch (error) {
-            console.error("Failed to reload daily stats:", error);
-          }
         })
         .catch((error) => {
           console.error("Failed to log exercise:", error);
