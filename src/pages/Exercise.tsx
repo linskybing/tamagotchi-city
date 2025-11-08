@@ -395,12 +395,12 @@ const Exercise: React.FC = () => {
     }
 
     try {
-      const newStrength = pet.strength + 30;
+      const newStrength = pet.strength + 500;
       await updateUserPet(userId, {
         strength: newStrength
       });
       await refreshPet();
-      toast.success(`開發者模式：力量 +30！(${pet.strength} → ${newStrength})`);
+      toast.success(`開發者模式：力量 +500！(${pet.strength} → ${newStrength})`);
     } catch (error) {
       console.error("Failed to boost strength:", error);
       toast.error("更新失敗");
@@ -685,7 +685,7 @@ const Exercise: React.FC = () => {
                   onClick={handleDevModeBoost}
                   disabled={!userId || !pet}
                 >
-                  +30 力量值
+                  +500 力量值
                 </Button>
               </div>
             )}
