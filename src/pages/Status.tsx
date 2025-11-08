@@ -3,15 +3,28 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, TrendingUp, CheckCircle2, Circle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/hooks/useUser";
-import { getDailyQuests } from "@/lib/api";
+import { getDailyQuests, getUser } from "@/lib/api";
 import { useEffect, useState } from "react";
 import type { UserQuest } from "@/lib/api";
+
+// Format seconds into H:MM:SS or M:SS
+function formatDuration(totalSeconds: number): string {
+  const sec = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  const two = (n: number) => String(n).padStart(2, "0");
+  if (h > 0) return `${h}:${two(m)}:${two(s)}`;
+  return `${m}:${two(s)}`;
+}
 
 const Status = () => {
   const navigate = useNavigate();
   const { userId, pet } = useUser();
   const [quests, setQuests] = useState<UserQuest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [todaySteps, setTodaySteps] = useState<number | null>(null);
+  const [todayExerciseSeconds, setTodayExerciseSeconds] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchQuests = async () => {
@@ -26,6 +39,35 @@ const Status = () => {
       }
     };
     fetchQuests();
+  }, [userId]);
+
+  // Fetch user's exercise logs (from getUser) and compute today's totals
+  useEffect(() => {
+    const fetchUserAndCompute = async () => {
+      if (!userId) return;
+      try {
+        const u = await getUser(userId);
+        const logs = u.exercise_logs ?? [];
+        const today = new Date().toISOString().split("T")[0];
+        let stepsSum = 0;
+        let secondsSum = 0;
+        for (const l of logs) {
+          const date = l.created_at.split("T")[0];
+          if (date === today) {
+            // assume volume represents steps for step-type exercises
+            stepsSum += Number(l.volume ?? 0);
+            secondsSum += Number(l.duration_seconds ?? 0);
+          }
+        }
+        setTodaySteps(stepsSum);
+        setTodayExerciseSeconds(secondsSum);
+      } catch (error) {
+        console.error("Failed to fetch user/exercise logs:", error);
+        setTodaySteps(null);
+        setTodayExerciseSeconds(null);
+      }
+    };
+    fetchUserAndCompute();
   }, [userId]);
 
   if (!pet) {
@@ -106,6 +148,19 @@ const Status = () => {
             </div>
             <div className="tp-caption" style={{ color: 'var(--tp-grayscale-500)' }}>
               {pet.stamina > 0 ? '還可以運動！' : '今天已經運動足夠了，好好休息吧！'}
+            </div>
+            {/* Today's steps and total exercise time */}
+            <div className="mt-4 border-t pt-3 space-y-1">
+              <div className="flex justify-between tp-body-regular">
+                <span style={{ color: 'var(--tp-grayscale-600)' }}>今日總步數</span>
+                <span style={{ color: 'var(--tp-primary-600)' }}>{todaySteps !== null ? todaySteps : '—'}</span>
+              </div>
+              <div className="flex justify-between tp-body-regular">
+                <span style={{ color: 'var(--tp-grayscale-600)' }}>今日總運動時間</span>
+                <span style={{ color: 'var(--tp-primary-600)' }}>
+                  {todayExerciseSeconds !== null ? formatDuration(todayExerciseSeconds) : '—'}
+                </span>
+              </div>
             </div>
           </div>
         </Card>
