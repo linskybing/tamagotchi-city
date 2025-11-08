@@ -58,7 +58,7 @@ const DAILY_QUESTS = [
 export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
-  const { userId, refreshPet } = useUser();
+  const { userId, pet, refreshPet } = useUser();
   const [completedQuests, setCompletedQuests] = useState<Set<number>>(new Set());
   const [claiming, setClaiming] = useState<number | null>(null);
   const [missionsOpen, setMissionsOpen] = useState(false);
@@ -81,7 +81,7 @@ export function AppSidebar() {
     };
 
     loadQuests();
-  }, [userId]);
+  }, [userId, pet?.daily_exercise_seconds, pet?.daily_steps]);
 
   const handleClaimReward = async (questId: number) => {
     if (claiming !== null) return;

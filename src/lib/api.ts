@@ -113,6 +113,13 @@ export interface BreakthroughResult {
     message: string;
 }
 
+// 每日統計
+export interface DailyStats {
+    daily_exercise_seconds: number;
+    daily_steps: number;
+    last_reset_date: string | null;
+}
+
 // 每日任務相關（匹配後端實際返回格式）
 export interface DailyQuestStatus {
     quest_1_completed: boolean;
@@ -187,6 +194,15 @@ export async function getUser(userId: string): Promise<User> {
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.detail || "Failed to get user");
+    }
+    return response.json();
+}
+
+export async function getDailyStats(userId: string): Promise<DailyStats> {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/daily-stats`);
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to get daily stats");
     }
     return response.json();
 }
