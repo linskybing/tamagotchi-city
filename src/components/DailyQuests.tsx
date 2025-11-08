@@ -73,30 +73,22 @@ const DailyQuests = ({ userId, onQuestCompleted }: DailyQuestsProps) => {
     }, [userId]);
 
     const handleClaimReward = async (questId: number) => {
-        if (claiming !== null) return; // 防止重複點擊
+        if (claiming !== null) return;
 
         setClaiming(questId);
         try {
             const result = await claimDailyQuest(userId, questId);
             if (result.success) {
-                const rewards = result.rewards;
-                toast.success(`任務完成！獲得獎勵：💪 +${rewards?.strength || 0}, ⚡ +${rewards?.stamina || 0}, 😊 +${rewards?.mood || 0}`);
-
-                // 領取成功後,從完成列表中移除(後端已經將狀態改為false防止重複領取)
+                toast.success(`任務完成！💪 +${result.rewards.strength}, ⚡ +${result.rewards.stamina}, 😊 +${result.rewards.mood}`);
                 setCompletedQuests(prev => {
                     const newSet = new Set(prev);
                     newSet.delete(questId);
                     return newSet;
                 });
-
                 onQuestCompleted?.();
-            } else {
-                toast.error(result.message || "領取獎勵失敗");
             }
         } catch (error) {
-            console.error("Failed to claim reward:", error);
-            const errorMessage = error instanceof Error ? error.message : "領取獎勵失敗";
-            toast.error(errorMessage);
+            toast.error("領取獎勵失敗");
         } finally {
             setClaiming(null);
         }
