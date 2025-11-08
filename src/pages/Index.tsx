@@ -120,6 +120,8 @@ const Index = () => {
     };
   }, []);
 
+  const alreadyNotifiedRef = useRef(false);
+
   useEffect(() => {
     const checkEarlyBirdTime = () => {
       const now = new Date();
@@ -128,10 +130,7 @@ const Index = () => {
       // Demo: 1-5
       const isEarlyBirdTime = true;
 
-      // 讀取 localStorage
-      const alreadyNotified = localStorage.getItem("earlyBirdNotified") === "true";
-
-      if (isEarlyBirdTime && window.flutterObject && !alreadyNotified) {
+      if (isEarlyBirdTime && window.flutterObject && !alreadyNotifiedRef.current) {
         try {
           const message = JSON.stringify({
             name: "notify",
@@ -142,9 +141,7 @@ const Index = () => {
           });
           window.flutterObject.postMessage(message);
           console.log("[早雞通知] 已發送早雞時段通知");
-
-          // 存到 localStorage
-          localStorage.setItem("earlyBirdNotified", "true");
+          alreadyNotifiedRef.current = true; // <-- 只會被 set 一次
         } catch (error) {
           console.error("[早雞通知] 發送失敗:", error);
         }
@@ -152,7 +149,7 @@ const Index = () => {
 
       // 如果時段結束 -> 重置
       if (!isEarlyBirdTime) {
-        localStorage.setItem("earlyBirdNotified", "false");
+        alreadyNotifiedRef.current = false;
       }
     };
 
